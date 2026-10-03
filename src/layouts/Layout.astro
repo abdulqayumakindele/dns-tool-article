@@ -1,0 +1,55 @@
+---
+import '../styles/global.css';
+import { site } from '../data/content.js';
+const { title = site.name } = Astro.props;
+const desc = site.description;
+const url = site.url;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="description" content={desc}/>
+  <meta property="og:title" content={title}/>
+  <meta property="og:description" content={desc}/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content={url}/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <title>{title}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <slot/>
+  <script>
+    // Scroll header solidify
+    const header = document.querySelector('.site-header');
+    if (header) {
+      window.addEventListener('scroll', () => {
+        header.classList.toggle('scrolled', window.scrollY > 40);
+      });
+    }
+    // Mobile menu
+    const menuBtn = document.querySelector('.menu');
+    const mobileNav = document.querySelector('.mobile-nav');
+    const closeBtn = document.querySelector('.mobile-close');
+    if (menuBtn && mobileNav) {
+      menuBtn.addEventListener('click', () => mobileNav.classList.add('open'));
+      if (closeBtn) closeBtn.addEventListener('click', () => mobileNav.classList.remove('open'));
+      mobileNav.querySelectorAll('a').forEach(a => {
+        a.addEventListener('click', () => mobileNav.classList.remove('open'));
+      });
+    }
+    // Active nav
+    const links = document.querySelectorAll('.site-header nav a, .mobile-nav a');
+    links.forEach(link => {
+      if (link.href === window.location.href || 
+          (window.location.pathname !== '/' && link.href.includes(window.location.pathname))) {
+        link.classList.add('active');
+      }
+    });
+  </script>
+</body>
+</html>

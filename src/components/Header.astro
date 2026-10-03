@@ -1,0 +1,26 @@
+---
+import { site } from '../data/content.js';
+const navLinks = [
+  ['Home', '/'],
+  ['Article', '/article'],
+  ['DNS Tool', '/tool'],
+  ['Resources', '/resources'],
+];
+---
+
+<header class="site-header">
+  <a class="brand" href="/">{site.brand}</a>
+  <button class="menu" aria-label="Open menu" aria-expanded="false">☰</button>
+  <nav aria-label="Main navigation">
+    {navLinks.map(([label, href]) => (
+      <a href={href}>{label}</a>
+    ))}
+  </nav>
+</header>
+
+<nav class="mobile-nav" aria-label="Mobile navigation">
+  <button class="mobile-close" aria-label="Close menu">✕</button>
+  {navLinks.map(([label, href]) => (
+    <a href={href}>{label}</a>
+  ))}
+</nav>

@@ -1,0 +1,49 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { site, article } from '../data/content.js';
+---
+<Layout title={`${article.title} | ${site.brand}`}>
+<Header/>
+<main id="main-content">
+  <div class="wrap page-header">
+    <span class="tag" aria-hidden="true">Technical Writing</span>
+    <h1 class="page-title" style="margin-top:12px;">{article.title}</h1>
+    <p class="page-subtitle">By {article.author}</p>
+  </div>
+  <section class="section"><div class="wrap prose">
+    <p style="font-size:1.1rem;">{article.intro}</p>
+    <figure id="diagram" style="margin:28px 0;">
+<svg viewBox="0 0 760 250" role="img" aria-labelledby="dns-diagram-title dns-diagram-desc" style="width:100%;height:auto;max-width:760px;">
+  <title id="dns-diagram-title">DNS lookup flow</title>
+  <desc id="dns-diagram-desc">Your device asks a recursive resolver, which asks the root server, then the TLD server, then the authoritative nameserver, and returns the IP address.</desc>
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#65a8ff"/></marker></defs>
+  <g font-family="Inter, sans-serif" font-size="13" fill="#e8eaf0" text-anchor="middle">
+    <rect x="10" y="95" width="120" height="60" rx="10" fill="#12151c" stroke="#65a8ff"/><text x="70" y="130">Your device</text>
+    <rect x="200" y="95" width="130" height="60" rx="10" fill="#12151c" stroke="#65a8ff"/><text x="265" y="120">Recursive</text><text x="265" y="138">resolver</text>
+    <rect x="420" y="10" width="120" height="50" rx="10" fill="#12151c" stroke="#3a4152"/><text x="480" y="40">Root server</text>
+    <rect x="420" y="100" width="120" height="50" rx="10" fill="#12151c" stroke="#3a4152"/><text x="480" y="130">TLD (.com)</text>
+    <rect x="420" y="190" width="150" height="50" rx="10" fill="#12151c" stroke="#3a4152"/><text x="495" y="215">Authoritative</text><text x="495" y="231" font-size="11">nameserver</text>
+  </g>
+  <g stroke="#65a8ff" stroke-width="2" fill="none" marker-end="url(#arr)">
+    <path d="M130 118 L198 118"/><path d="M330 108 L418 40"/><path d="M330 125 L418 125"/><path d="M330 142 L418 210"/>
+  </g>
+  <g font-family="Inter, sans-serif" font-size="11" fill="#9ca3b1" text-anchor="middle">
+    <text x="165" y="108">1 ask</text><text x="380" y="68">2</text><text x="375" y="118">3</text><text x="380" y="190">4</text>
+    <text x="640" y="130" text-anchor="start">5 IP address returned</text><text x="640" y="146" text-anchor="start">to your device (cached)</text>
+  </g>
+</svg>
+      <figcaption class="muted" style="font-size:.85rem;margin-top:8px;">Figure (simplified): steps 2–4 are carried out by the recursive resolver, not by your device or the Python tool. Caching often lets the resolver skip some of them.</figcaption>
+    </figure>
+    {article.sections.map(s => (
+      <section>
+        <h2>{s.heading}</h2>
+        {s.paragraphs.map(p => <p>{p}</p>)}
+      </section>
+    ))}
+    <div class="actions" style="margin-top:32px;"><a class="btn primary" href="/tool">Try the DNS tool →</a></div>
+  </div></section>
+</main>
+<Footer/>
+</Layout>

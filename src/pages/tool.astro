@@ -1,0 +1,49 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { site, install, toolUsage, toolOptions, recordTypes, cnameNotes, errorNotes, toolLimitations, responsibleUse, exampleOutput, exampleNote } from '../data/content.js';
+import code from '../../tool/dns_lookup.py?raw';
+---
+<Layout title={`DNS Tool | ${site.brand}`}>
+<Header/>
+<main id="main-content">
+  <div class="wrap page-header">
+    <span class="tag" aria-hidden="true">Python · dnspython</span>
+    <h1 class="page-title" style="margin-top:12px;">DNS Lookup Tool</h1>
+    <p class="page-subtitle">Turn the concept into a tool: query DNS records from your terminal. It asks one DNS server and shows what that server answers.</p>
+  </div>
+  <section class="section"><div class="wrap prose">
+    <h2 style="margin-top:0;">Install</h2>
+    <ol class="steps">{install.map(s => <li>{s}</li>)}</ol>
+    <h2>Run it</h2>
+    {toolUsage.map(e => <pre class="code-block"><code>{e}</code></pre>)}
+    <h2>Options</h2>
+    <table class="data-table"><thead><tr><th>Option</th><th>Meaning</th><th>Default</th></tr></thead>
+    <tbody>{toolOptions.map(([o,m,d]) => <tr><td><code>{o}</code></td><td>{m}</td><td>{d}</td></tr>)}</tbody></table>
+    <h2>Record types it looks up</h2>
+    <table class="data-table"><thead><tr><th>Type</th><th>Meaning</th></tr></thead>
+    <tbody>{recordTypes.map(([t,m]) => <tr><td><code>{t}</code></td><td>{m}</td></tr>)}</tbody></table>
+    <h2>Example output</h2>
+    <pre class="code-block"><code>{exampleOutput}</code></pre>
+    <p class="muted" style="font-size:.85rem;">{exampleNote}</p>
+    <h2>CNAME tracing and the hop limit</h2>
+    <ul>{cnameNotes.map(n => <li class="muted" style="margin-bottom:8px;">{n}</li>)}</ul>
+    <h2>Custom DNS servers</h2>
+    <p class="muted">Use <code>--server</code> with an IPv4 or IPv6 address to ask a different DNS server than your system default. Host names and ports are rejected with a clear message. Different servers can return different answers, especially right after a record changes.</p>
+    <h2>When something goes wrong</h2>
+    <table class="data-table"><thead><tr><th>Message</th><th>What it means</th></tr></thead>
+    <tbody>{errorNotes.map(([m,d]) => <tr><td>{m}</td><td>{d}</td></tr>)}</tbody></table>
+    <h2>Limitations</h2>
+    <ul>{toolLimitations.map(l => <li class="muted" style="margin-bottom:8px;">{l}</li>)}</ul>
+    <h2>Responsible use</h2>
+    <div class="notice" role="note">{responsibleUse.map(r => <p style="margin:0 0 8px;">{r}</p>)}</div>
+    <h2>Run the tests</h2>
+    <pre class="code-block"><code>python3 -m unittest discover -s tests -v</code></pre>
+    <h2>Source code</h2>
+    <pre class="code-block"><code>{code}</code></pre>
+    <div class="actions"><a class="btn primary" href={site.repo} target="_blank" rel="noopener noreferrer">View on GitHub ↗<span class="sr-only"> (opens in new tab)</span></a></div>
+  </div></section>
+</main>
+<Footer/>
+</Layout>

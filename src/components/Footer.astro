@@ -1,0 +1,20 @@
+---
+import { site } from '../data/content.js';
+---
+<footer>
+  <div>
+    <strong style="color:#fff;font-size:1.05rem;">{site.brand}</strong>
+    <p style="font-size:.88rem;margin-top:4px;">{site.tagline}</p>
+  </div>
+  <nav class="footer-links" aria-label="Footer navigation">
+    <a href="/article">Article</a>
+    <a href="/tool">DNS Tool</a>
+    <a href="/resources">Resources</a>
+  </nav>
+  <div class="footer-links">
+    {site.links.map(([label, url]) => (
+      <a href={url} target="_blank" rel="noopener noreferrer">{label} ↗<span class="sr-only"> (opens in new tab)</span></a>
+    ))}
+  </div>
+  <small>© 2026 Abdul Qayum Akindele</small>
+</footer>
