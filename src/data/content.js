@@ -54,7 +54,7 @@ export const article = {
     {
       "heading": "What the Python tool actually does",
       "paragraphs": [
-        "The tool uses the dnspython library to send DNS queries to one DNS server and print the answers. For each record type you ask for, it sends a separate query and shows the records returned, or a clear message if there are none or the query failed. To trace a CNAME chain, it asks for the CNAME record of the domain, then of the name it points to, and so on, until the chain ends, loops, or reaches the hop limit.",
+        "The tool uses the dnspython library to send DNS queries to one DNS server and print the answers. For each record type you ask for, it sends a separate query and shows the records returned, or a clear message if there are none or the query failed. The records are sorted before printing (MX by priority, addresses numerically, the rest alphabetically), because DNS servers rotate record order on purpose and unsorted output would change from run to run. To trace a CNAME chain, it asks for the CNAME record of the domain, then of the name it points to, and so on, until the chain ends, loops, or reaches the hop limit.",
         "The DNS server it asks is your system's default resolver, or the one you choose with --server. That server does the walk through the root, top-level-domain, and authoritative servers; the tool itself only asks the question and reports the reply. It does not, for example, list every server involved in the lookup."
       ]
     },
@@ -155,12 +155,34 @@ export const exampleOutput = `DNS lookup for www.example.com
 DNS server : 8.8.8.8 (custom)
 --------------------------------------------
 A      192.0.2.10
-AAAA   2001:db8::10
+       192.0.2.20
+AAAA   (none)
 CNAME  edge.example.net.
-MX     10 mail.example.com.
+MX     10 mail1.example.com.
+       20 mail2.example.com.
+       (lower number = tried first)
 NS     ns1.example.com.
        ns2.example.com.
-TXT    (none)
+TXT    "hello-sample"
+       "v=spf1 include:_spf.example.com ~all"
+         ^ SPF: lists which servers may send email for this domain
 
 CNAME chain: www.example.com -> edge.example.net`;
 export const exampleNote = 'Illustrative example using documentation-only sample values for www.example.com (addresses from the reserved 192.0.2.0/24 and 2001:db8::/32 ranges). It is not a live lookup — real results will differ.';
+
+// ─────────────────────────────────────────────
+// SORTED OUTPUT + FIELD NOTE
+// ─────────────────────────────────────────────
+export const sortNotes = [
+  'DNS servers deliberately rotate the order of records (called round-robin) to spread traffic, so the same lookup can list records in a different order each time.',
+  'The tool sorts what it prints so two runs of the same lookup look identical and are easy to compare: MX records by priority number (lowest first), A and AAAA records by address, and NS and TXT records alphabetically.',
+  'For MX records, a lower number means that mail server is tried first, so the primary mail server always appears at the top. A single record "0 ." (a "null MX") means the domain does not accept email.',
+  'A TXT record that starts with v=spf1 is an SPF policy: it lists which servers are allowed to send email for the domain. The tool adds a one-line note under it.',
+  'Sorting only changes the display order. The records themselves are exactly what the server returned.',
+];
+
+// Edit the wording to match what really happened when you cross-checked with dig.
+export const fieldNote = {
+  title: 'A bug found through real use',
+  text: 'Repeating the same lookup showed the same records in a different order each time, which made results hard to compare, including against dig. DNS servers rotate record order on purpose, so the tool now sorts its output.',
+};

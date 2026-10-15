@@ -9,6 +9,7 @@ fake resolver that returns scripted answers or raises scripted errors.
 
 import contextlib
 import io
+import itertools
 import os
 import sys
 import unittest
@@ -131,6 +132,78 @@ class QueryTests(unittest.TestCase):
     def test_error_statuses_include_helpful_text(self):
         result = dl.query(FakeResolver({("x.com", "A"): dns.exception.Timeout()}), "x.com", "A")
         self.assertIn("--server", result.message)
+
+
+class SortingTests(unittest.TestCase):
+    def lookup(self, rtype, records):
+        resolver = FakeResolver({("example.com", rtype): records})
+        return dl.query(resolver, "example.com", rtype).records
+
+    def test_mx_sorted_by_numeric_priority_then_name(self):
+        expected = ["5 m.example.", "10 a.example.", "10 z.example.", "20 b.example."]
+        for order in itertools.permutations(expected):
+            with self.subTest(order=order):
+                self.assertEqual(self.lookup("MX", list(order)), expected)
+
+    def test_mx_priority_is_numeric_not_text(self):
+        self.assertEqual(self.lookup("MX", ["100 c.example.", "20 b.example.", "3 a.example."]),
+                         ["3 a.example.", "20 b.example.", "100 c.example."])
+
+    def test_mx_malformed_record_does_not_crash_and_goes_last(self):
+        self.assertEqual(self.lookup("MX", ["weird", "10 a.example."]), ["10 a.example.", "weird"])
+
+    def test_ns_and_txt_sorted_alphabetically_ignoring_case(self):
+        self.assertEqual(self.lookup("NS", ["hera.ns.example.", "Elliott.ns.example.", "alpha.ns.example."]),
+                         ["alpha.ns.example.", "Elliott.ns.example.", "hera.ns.example."])
+        self.assertEqual(self.lookup("TXT", ['"v=spf1 -all"', '"_token123"', '"google-site=abc"']),
+                         ['"_token123"', '"google-site=abc"', '"v=spf1 -all"'])
+
+    def test_addresses_sorted_numerically(self):
+        self.assertEqual(self.lookup("A", ["10.0.0.10", "10.0.0.2", "9.9.9.9"]),
+                         ["9.9.9.9", "10.0.0.2", "10.0.0.10"])
+        self.assertEqual(self.lookup("AAAA", ["2001:db8::10", "2001:db8::2"]),
+                         ["2001:db8::2", "2001:db8::10"])
+
+    def test_same_records_in_any_order_give_identical_output(self):
+        records = {"MX": ["20 b.example.", "10 a.example."], "NS": ["ns2.example.", "ns1.example."],
+                   "TXT": ['"b"', '"a"'], "A": ["192.0.2.20", "192.0.2.3"]}
+        outputs = set()
+        for flip in (False, True, None):
+            script = {}
+            for rtype, recs in records.items():
+                recs = list(recs)
+                if flip is True:
+                    recs.reverse()
+                elif flip is None:
+                    recs = recs[1:] + recs[:1]
+                script[("example.com", rtype)] = recs
+            _, out, _, _ = run_main(script, "example.com", "-t", "A", "MX", "NS", "TXT")
+            outputs.add(out)
+        self.assertEqual(len(outputs), 1)
+
+
+class HintTests(unittest.TestCase):
+    def test_mx_hint_is_shown(self):
+        _, out, _, _ = run_main({("example.com", "MX"): ["10 a.example.", "5 b.example."]},
+                                "example.com", "-t", "MX")
+        self.assertIn("(lower number = tried first)", out)
+        self.assertLess(out.index("5 b.example."), out.index("10 a.example."))
+
+    def test_null_mx_gets_its_own_note(self):
+        _, out, _, _ = run_main({("example.com", "MX"): ["0 ."]}, "example.com", "-t", "MX")
+        self.assertIn("does not accept email", out)
+        self.assertNotIn("lower number", out)
+
+    def test_spf_record_gets_a_short_explanation(self):
+        _, out, _, _ = run_main({("example.com", "TXT"): ['"v=spf1 include:_spf.example.com ~all"', '"hello"']},
+                                "example.com", "-t", "TXT")
+        self.assertEqual(out.count("SPF:"), 1)
+        self.assertIn("may send email", out)
+
+    def test_no_hints_for_other_record_types_or_empty_results(self):
+        _, out, _, _ = run_main({("example.com", "A"): ["192.0.2.10"]}, "example.com", "-t", "A", "MX")
+        self.assertNotIn("lower number", out)
+        self.assertNotIn("SPF", out)
 
 
 class MakeResolverTests(unittest.TestCase):

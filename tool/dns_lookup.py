@@ -143,6 +143,44 @@ def describe_server(resolver, custom):
     return f"{servers} ({'custom' if custom else 'system default'})"
 
 
+def _mx_key(text):
+    """MX records look like '10 mail.example.com.': sort by number, then name."""
+    parts = text.split(None, 1)
+    try:
+        priority = int(parts[0])
+    except (ValueError, IndexError):
+        return (1, 0, text.lower(), text)          # malformed: put last, never crash
+    name = parts[1] if len(parts) > 1 else ""
+    return (0, priority, name.lower(), text)
+
+
+def _ip_key(text):
+    """Sort IP addresses by their numeric value (so 10.0.0.2 comes before 10.0.0.10)."""
+    try:
+        return (0, int(ipaddress.ip_address(text)), text)
+    except ValueError:
+        return (1, 0, text)
+
+
+def sort_records(rtype, records):
+    """
+    Return records in a stable order. DNS servers rotate the order of records
+    on purpose, so without sorting, two runs of the same lookup can look
+    different. MX is sorted by priority (lowest first, the one tried first),
+    A/AAAA by address, and everything else alphabetically.
+    """
+    if rtype == "MX":
+        return sorted(records, key=_mx_key)
+    if rtype in ("A", "AAAA"):
+        return sorted(records, key=_ip_key)
+    return sorted(records, key=lambda text: (text.lower(), text))
+
+
+def is_spf(text):
+    """True for a TXT record that starts with v=spf1 (an SPF email policy)."""
+    return text.strip().strip('"').lower().startswith("v=spf1")
+
+
 def query(resolver, name, rtype):
     """Ask for one record type. Never raises for expected DNS problems."""
     try:
@@ -160,7 +198,7 @@ def query(resolver, name, rtype):
         return Result("error", [], f"The DNS server sent a response that could not be used ({detail}).")
     except OSError as err:                         # network unreachable, etc.
         return Result("error", [], f"Network problem while contacting the DNS server ({err}).")
-    return Result("ok", [rr.to_text() for rr in answers], "")
+    return Result("ok", sort_records(rtype, [rr.to_text() for rr in answers]), "")
 
 
 def trace_cname(resolver, name, max_hops=MAX_CNAME_HOPS):
@@ -205,7 +243,17 @@ def build_parser():
 
 def print_records(rtype, result):
     if result.status == "ok":
-        print(f"{rtype:<6} " + "\n       ".join(result.records))
+        lines = []
+        for record in result.records:
+            lines.append(record)
+            if rtype == "TXT" and is_spf(record):
+                lines.append("  ^ SPF: lists which servers may send email for this domain")
+        if rtype == "MX":
+            if result.records == ["0 ."]:
+                lines.append("(0 . means this domain does not accept email)")
+            else:
+                lines.append("(lower number = tried first)")
+        print(f"{rtype:<6} " + "\n       ".join(lines))
     elif result.status == "no_answer":
         print(f"{rtype:<6} (none)")
     else:

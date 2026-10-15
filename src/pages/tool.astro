@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import { site, install, toolUsage, toolOptions, recordTypes, cnameNotes, errorNotes, toolLimitations, responsibleUse, exampleOutput, exampleNote } from '../data/content.js';
+import { site, install, toolUsage, toolOptions, recordTypes, cnameNotes, errorNotes, toolLimitations, responsibleUse, exampleOutput, exampleNote, sortNotes, fieldNote } from '../data/content.js';
 import code from '../../tool/dns_lookup.py?raw';
 ---
 <Layout title={`DNS Tool | ${site.brand}`}>
@@ -27,6 +27,8 @@ import code from '../../tool/dns_lookup.py?raw';
     <h2>Example output</h2>
     <pre class="code-block"><code>{exampleOutput}</code></pre>
     <p class="muted" style="font-size:.85rem;">{exampleNote}</p>
+    <h2>Sorted output</h2>
+    <ul>{sortNotes.map(n => <li class="muted" style="margin-bottom:8px;">{n}</li>)}</ul>
     <h2>CNAME tracing and the hop limit</h2>
     <ul>{cnameNotes.map(n => <li class="muted" style="margin-bottom:8px;">{n}</li>)}</ul>
     <h2>Custom DNS servers</h2>
@@ -38,6 +40,8 @@ import code from '../../tool/dns_lookup.py?raw';
     <ul>{toolLimitations.map(l => <li class="muted" style="margin-bottom:8px;">{l}</li>)}</ul>
     <h2>Responsible use</h2>
     <div class="notice" role="note">{responsibleUse.map(r => <p style="margin:0 0 8px;">{r}</p>)}</div>
+    <h2>{fieldNote.title}</h2>
+    <p class="muted">{fieldNote.text}</p>
     <h2>Run the tests</h2>
     <pre class="code-block"><code>python3 -m unittest discover -s tests -v</code></pre>
     <h2>Source code</h2>

@@ -7,6 +7,7 @@ A beginner-friendly article on how DNS works, a simplified diagram of the lookup
 ## What the tool does
 - Asks **one** DNS server (your system default, or one you choose) for the record types you request
 - Prints the domain, the DNS server used, the records returned, and clear messages when there are none or a query fails
+- Sorts records so repeated lookups look identical (MX by priority, addresses numerically, NS/TXT alphabetically) and adds short beginner hints under MX and SPF records
 - Follows CNAME chains one hop at a time, with loop detection and a 10-hop safety limit
 - Validates the domain and the `--server` address before doing anything, and reports problems in plain English instead of a traceback
 
@@ -44,18 +45,26 @@ DNS lookup for www.example.com
 DNS server : 8.8.8.8 (custom)
 --------------------------------------------
 A      192.0.2.10
-AAAA   2001:db8::10
+       192.0.2.20
+AAAA   (none)
 CNAME  edge.example.net.
-MX     10 mail.example.com.
+MX     10 mail1.example.com.
+       20 mail2.example.com.
+       (lower number = tried first)
 NS     ns1.example.com.
        ns2.example.com.
-TXT    (none)
+TXT    "hello-sample"
+       "v=spf1 include:_spf.example.com ~all"
+         ^ SPF: lists which servers may send email for this domain
 
 CNAME chain: www.example.com -> edge.example.net
 ```
 
 ## Custom DNS servers
 `--server` accepts an IPv4 or IPv6 address. Host names (`dns.google`), ports (`8.8.8.8:53`), invalid addresses and unusable addresses (`0.0.0.0`, multicast) are rejected with a clear message. Different servers can return different answers, especially right after a record changes.
+
+## Sorted output
+DNS servers rotate the order of records on purpose (round-robin), so the same lookup can list records in a different order each run. The tool sorts what it prints so two runs look identical and are easy to compare: **MX by priority** (lowest number first, which is tried first), **A/AAAA by address**, and **NS/TXT alphabetically**. Sorting only changes the display order. A TXT record starting with `v=spf1` gets a one-line note that it lists who may send email for the domain, and a single `0 .` MX record is explained as "does not accept email".
 
 ## CNAME tracing and the hop limit
 A CNAME makes one name an alias of another, and that target can itself be a CNAME, forming a chain. The tool follows the chain one hop at a time. It **stops after 10 hops** because a misconfigured chain - or two names that point at each other - would otherwise repeat forever. Real chains are normally short, so reaching the limit almost always means a mistake. Loops are also detected directly (a name appearing twice), and a chain that ends at a name that does not exist is reported. The chain is traced only when `CNAME` is among the requested types (it is by default).
